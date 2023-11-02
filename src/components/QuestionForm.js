@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
-function QuestionForm(props) {
+function QuestionForm() {
   const [formData, setFormData] = useState({
     prompt: "",
     answer1: "",
@@ -10,6 +10,16 @@ function QuestionForm(props) {
     correctIndex: 0,
   });
 
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    // When the component is mounted, isMounted.current will be true
+    // When the component is unmounted, set isMounted.current to false
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   function handleChange(event) {
     setFormData({
       ...formData,
@@ -17,9 +27,49 @@ function QuestionForm(props) {
     });
   }
 
+  const postQuestion = () => {
+    fetch("http://localhost:4000/questions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        "prompt": formData.prompt,
+        "answers": [
+          formData.answer1,
+          formData.answer2,
+          formData.answer3,
+          formData.answer4,
+        ],
+        "correctIndex": parseInt(formData.correctIndex),
+      }),
+    })
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      console.log(data);
+      // Only update state if the component is still mounted
+      if (isMounted.current) {
+        setFormData({
+          prompt: "",
+          answer1: "",
+          answer2: "",
+          answer3: "",
+          answer4: "",
+          correctIndex: 0,
+        });
+      }
+    })
+    .catch((err) => {
+      console.log(err.message);
+    });
+  };
+
   function handleSubmit(event) {
     event.preventDefault();
-    console.log(formData);
+    postQuestion();
   }
 
   return (
@@ -32,7 +82,7 @@ function QuestionForm(props) {
             type="text"
             name="prompt"
             value={formData.prompt}
-            onChange={handleChange}
+            onChange={handleChange} 
           />
         </label>
         <label>
@@ -41,7 +91,7 @@ function QuestionForm(props) {
             type="text"
             name="answer1"
             value={formData.answer1}
-            onChange={handleChange}
+            onChange={handleChange} 
           />
         </label>
         <label>
@@ -50,7 +100,7 @@ function QuestionForm(props) {
             type="text"
             name="answer2"
             value={formData.answer2}
-            onChange={handleChange}
+            onChange={handleChange} 
           />
         </label>
         <label>
@@ -91,3 +141,5 @@ function QuestionForm(props) {
 }
 
 export default QuestionForm;
+
+
